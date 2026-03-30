@@ -1,0 +1,5 @@
+com/hospital/oms/web/OrderControllerTest.class
+com/hospital/oms/HospitalOrderManagementApplicationTests.class
+com/hospital/oms/factory/OrderFactoryTest.class
+com/hospital/oms/engine/TriagingEngineTest.class
+com/hospital/oms/manager/OrderManagerTest.class
