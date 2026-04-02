@@ -18,7 +18,6 @@ public class TriagingEngine {
         this.triageStrategy = triageStrategy;
     }
 
-    /** Returns a sorted copy; does not load from storage. */
     public List<Order> sortPendingQueue(List<Order> pending) {
         List<Order> copy = new ArrayList<>(pending);
         Comparator<Order> cmp = triageStrategy::compareQueuePosition;

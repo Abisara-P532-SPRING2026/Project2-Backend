@@ -1,10 +1,13 @@
 package com.hospital.oms.web.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hospital.oms.commandlog.CommandLogEntry;
 
 import java.time.Instant;
 
+/**
+ * Audit row for the API. Use {@code performedBy} only here — Jackson + records break if an extra
+ * {@code @JsonProperty("actor")} accessor is added for the same value.
+ */
 public record CommandLogResponse(Instant timestamp, String commandType, String orderId, String performedBy) {
 
     public static CommandLogResponse from(CommandLogEntry e) {
@@ -13,10 +16,5 @@ public record CommandLogResponse(Instant timestamp, String commandType, String o
             who = "";
         }
         return new CommandLogResponse(e.timestamp(), e.commandType(), e.orderId(), who);
-    }
-
-    @JsonProperty("actor")
-    public String actor() {
-        return performedBy;
     }
 }

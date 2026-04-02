@@ -45,12 +45,12 @@ public class OrderController {
     public OrderResponse submit(@Valid @RequestBody SubmitOrderRequest request) {
         SubmitOrderCommand cmd =
                 new SubmitOrderCommand(
-                        request.orderType(),
-                        request.patientName(),
-                        request.orderingClinicianId(),
-                        request.description(),
-                        request.priority(),
-                        request.clinicianName());
+                        request.getOrderType(),
+                        request.getPatientName(),
+                        request.getOrderingClinicianId(),
+                        request.getDescription(),
+                        request.getPriority(),
+                        request.getClinicianName());
         orderManager.execute(cmd);
         return OrderResponse.from(
                 orderManager
@@ -80,7 +80,7 @@ public class OrderController {
 
     @PostMapping("/orders/{id}/cancel")
     public OrderResponse cancel(@PathVariable String id, @Valid @RequestBody CancelRequest body) {
-        OrderCommand cmd = new CancelOrderCommand(id, body.clinicianId().trim());
+        OrderCommand cmd = new CancelOrderCommand(id, body.getClinicianId().trim());
         orderManager.execute(cmd);
         return OrderResponse.from(
                 orderManager
