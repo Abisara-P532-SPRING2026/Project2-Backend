@@ -21,9 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-/**
- * Client layer: HTTP adapter — no business rules; delegates to {@link OrderManager}.
- */
 @RestController
 @RequestMapping("/api")
 public class OrderController {
@@ -50,10 +47,10 @@ public class OrderController {
                 new SubmitOrderCommand(
                         request.orderType(),
                         request.patientName(),
-                        request.orderingClinician(),
+                        request.orderingClinicianId(),
                         request.description(),
                         request.priority(),
-                        request.actor());
+                        request.clinicianName());
         orderManager.execute(cmd);
         return OrderResponse.from(
                 orderManager
@@ -83,7 +80,7 @@ public class OrderController {
 
     @PostMapping("/orders/{id}/cancel")
     public OrderResponse cancel(@PathVariable String id, @Valid @RequestBody CancelRequest body) {
-        OrderCommand cmd = new CancelOrderCommand(id, body.actor());
+        OrderCommand cmd = new CancelOrderCommand(id, body.clinicianId().trim());
         orderManager.execute(cmd);
         return OrderResponse.from(
                 orderManager

@@ -20,13 +20,15 @@ class OrderFactoryTest {
     @Test
     void createsLabMedicationImagingSubtypes() {
         Instant now = Instant.now();
-        Order lab = factory.createOrder(OrderType.LAB, "a", "b", "c", Priority.ROUTINE, now);
-        Order med = factory.createOrder(OrderType.MEDICATION, "a", "b", "c", Priority.ROUTINE, now);
-        Order img = factory.createOrder(OrderType.IMAGING, "a", "b", "c", Priority.ROUTINE, now);
+        Order lab = factory.createOrder(OrderType.LAB, "a", "id1", "Dr A", "c", Priority.ROUTINE, now);
+        Order med = factory.createOrder(OrderType.MEDICATION, "a", "id1", "Dr A", "c", Priority.ROUTINE, now);
+        Order img = factory.createOrder(OrderType.IMAGING, "a", "id1", "Dr A", "c", Priority.ROUTINE, now);
 
         assertThat(lab).isInstanceOf(LabOrder.class);
         assertThat(med).isInstanceOf(MedicationOrder.class);
         assertThat(img).isInstanceOf(ImagingOrder.class);
         assertThat(lab.getStatus()).isEqualTo(OrderStatus.PENDING);
+        assertThat(lab.getOrderingClinicianId()).isEqualTo("id1");
+        assertThat(lab.getOrderingClinicianName()).isEqualTo("Dr A");
     }
 }

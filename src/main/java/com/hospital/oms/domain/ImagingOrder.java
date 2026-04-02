@@ -7,11 +7,21 @@ public class ImagingOrder extends Order {
     public ImagingOrder(
             String id,
             String patientName,
-            String orderingClinician,
+            String orderingClinicianId,
+            String orderingClinicianName,
             String description,
             Priority priority,
             Instant createdAt,
             OrderStatus status) {
-        super(id, OrderType.IMAGING, patientName, orderingClinician, description, priority, createdAt, status);
+        super(
+                id,
+                OrderType.IMAGING,
+                patientName,
+                orderingClinicianId,
+                orderingClinicianName,
+                description,
+                priority,
+                createdAt,
+                status);
     }
 }

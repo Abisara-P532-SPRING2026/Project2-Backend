@@ -7,11 +7,21 @@ public class LabOrder extends Order {
     public LabOrder(
             String id,
             String patientName,
-            String orderingClinician,
+            String orderingClinicianId,
+            String orderingClinicianName,
             String description,
             Priority priority,
             Instant createdAt,
             OrderStatus status) {
-        super(id, OrderType.LAB, patientName, orderingClinician, description, priority, createdAt, status);
+        super(
+                id,
+                OrderType.LAB,
+                patientName,
+                orderingClinicianId,
+                orderingClinicianName,
+                description,
+                priority,
+                createdAt,
+                status);
     }
 }

@@ -8,30 +8,35 @@ public class SubmitOrderCommand implements OrderCommand {
 
     private final OrderType type;
     private final String patientName;
-    private final String orderingClinician;
+    private final String orderingClinicianId;
     private final String description;
     private final Priority priority;
-    private final String actor;
+    /** Clinician name for audit log / display. */
+    private final String clinicianName;
     private String createdOrderId;
 
     public SubmitOrderCommand(
             OrderType type,
             String patientName,
-            String orderingClinician,
+            String orderingClinicianId,
             String description,
             Priority priority,
-            String actor) {
+            String clinicianName) {
         this.type = type;
         this.patientName = patientName;
-        this.orderingClinician = orderingClinician;
+        this.orderingClinicianId = orderingClinicianId;
         this.description = description;
         this.priority = priority;
-        this.actor = actor;
+        this.clinicianName = clinicianName;
     }
 
     @Override
     public void execute(OrderManager manager) {
         manager.submit(this);
+    }
+
+    @Override
+    public void undo(OrderManager manager) {
     }
 
     @Override
@@ -50,7 +55,10 @@ public class SubmitOrderCommand implements OrderCommand {
 
     @Override
     public String getActor() {
-        return actor;
+        if (clinicianName != null && !clinicianName.isBlank()) {
+            return clinicianName.trim();
+        }
+        return orderingClinicianId == null ? "" : orderingClinicianId.trim();
     }
 
     public OrderType getType() {
@@ -61,8 +69,12 @@ public class SubmitOrderCommand implements OrderCommand {
         return patientName;
     }
 
-    public String getOrderingClinician() {
-        return orderingClinician;
+    public String getOrderingClinicianId() {
+        return orderingClinicianId;
+    }
+
+    public String getClinicianName() {
+        return clinicianName;
     }
 
     public String getDescription() {

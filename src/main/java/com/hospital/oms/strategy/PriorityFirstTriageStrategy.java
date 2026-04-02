@@ -4,9 +4,6 @@ import com.hospital.oms.domain.Order;
 import com.hospital.oms.domain.Priority;
 import org.springframework.stereotype.Component;
 
-/**
- * Week 1: STAT before URGENT before ROUTINE; ties broken by submission time (FIFO).
- */
 @Component
 public class PriorityFirstTriageStrategy implements TriageStrategy {
 

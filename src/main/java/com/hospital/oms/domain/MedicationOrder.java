@@ -7,11 +7,21 @@ public class MedicationOrder extends Order {
     public MedicationOrder(
             String id,
             String patientName,
-            String orderingClinician,
+            String orderingClinicianId,
+            String orderingClinicianName,
             String description,
             Priority priority,
             Instant createdAt,
             OrderStatus status) {
-        super(id, OrderType.MEDICATION, patientName, orderingClinician, description, priority, createdAt, status);
+        super(
+                id,
+                OrderType.MEDICATION,
+                patientName,
+                orderingClinicianId,
+                orderingClinicianName,
+                description,
+                priority,
+                createdAt,
+                status);
     }
 }

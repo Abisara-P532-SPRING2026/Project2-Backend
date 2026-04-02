@@ -1,6 +1,5 @@
 com/hospital/oms/domain/Priority.class
 com/hospital/oms/domain/OrderType.class
-com/hospital/oms/notification/ConsoleNotificationService.class
 com/hospital/oms/web/OrderController.class
 com/hospital/oms/config/CorsConfig.class
 com/hospital/oms/handler/ValidatingOrderHandlerDecorator.class
@@ -20,6 +19,7 @@ com/hospital/oms/web/dto/StaffActionRequest.class
 com/hospital/oms/HospitalOrderManagementApplication.class
 com/hospital/oms/resourceaccess/OrderAccess.class
 com/hospital/oms/web/ApiExceptionHandler.class
+com/hospital/oms/notification/ConsoleNotificationChannel.class
 com/hospital/oms/domain/LabOrder.class
 com/hospital/oms/handler/PriorityBoostingOrderHandlerDecorator.class
 com/hospital/oms/command/OrderCommand.class
@@ -30,11 +30,14 @@ com/hospital/oms/strategy/TriageStrategy.class
 com/hospital/oms/web/dto/OrderResponse.class
 com/hospital/oms/handler/OrderProcessingContext.class
 com/hospital/oms/command/SubmitOrderCommand.class
+com/hospital/oms/notification/NotificationChannel.class
 com/hospital/oms/factory/OrderFactory$1.class
 com/hospital/oms/handler/OrderProcessingHandler.class
 com/hospital/oms/domain/ImagingOrder.class
 com/hospital/oms/handler/AuditLoggingOrderHandlerDecorator.class
+com/hospital/oms/notification/CompositeNotificationService.class
 com/hospital/oms/domain/MedicationOrder.class
 com/hospital/oms/handler/BaseOrderProcessingHandler.class
+com/hospital/oms/engine/OrderStorageEngine.class
 com/hospital/oms/manager/OrderManager.class
 com/hospital/oms/commandlog/CommandLogEntry.class

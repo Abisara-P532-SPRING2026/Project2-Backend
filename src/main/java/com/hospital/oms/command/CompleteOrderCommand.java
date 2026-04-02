@@ -18,6 +18,10 @@ public class CompleteOrderCommand implements OrderCommand {
     }
 
     @Override
+    public void undo(OrderManager manager) {
+           }
+
+    @Override
     public String getCommandType() {
         return "COMPLETE";
     }

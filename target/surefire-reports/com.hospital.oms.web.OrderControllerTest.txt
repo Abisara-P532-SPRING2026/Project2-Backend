@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.hospital.oms.web.OrderControllerTest
 -------------------------------------------------------------------------------
-Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.728 s -- in com.hospital.oms.web.OrderControllerTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.577 s -- in com.hospital.oms.web.OrderControllerTest

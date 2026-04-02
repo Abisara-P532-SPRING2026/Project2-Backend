@@ -1,9 +1,7 @@
 package com.hospital.oms.handler;
 
 import com.hospital.oms.domain.Priority;
-/**
- * Decorator: optional priority adjustment hook (Week 1 is pass-through; extensible for Week 2).
- */
+
 public class PriorityBoostingOrderHandlerDecorator implements OrderProcessingHandler {
 
     private final OrderProcessingHandler delegate;

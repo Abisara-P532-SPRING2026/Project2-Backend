@@ -3,15 +3,14 @@ package com.hospital.oms.domain;
 import java.time.Instant;
 import java.util.Objects;
 
-/**
- * Resource layer: shared clinical order aggregate.
- */
+
 public abstract class Order {
 
     private final String id;
     private final OrderType type;
     private final String patientName;
-    private final String orderingClinician;
+    private final String orderingClinicianId;
+    private final String orderingClinicianName;
     private final String description;
     private final Priority priority;
     private final Instant createdAt;
@@ -23,7 +22,8 @@ public abstract class Order {
             String id,
             OrderType type,
             String patientName,
-            String orderingClinician,
+            String orderingClinicianId,
+            String orderingClinicianName,
             String description,
             Priority priority,
             Instant createdAt,
@@ -31,7 +31,8 @@ public abstract class Order {
         this.id = Objects.requireNonNull(id);
         this.type = Objects.requireNonNull(type);
         this.patientName = Objects.requireNonNull(patientName);
-        this.orderingClinician = Objects.requireNonNull(orderingClinician);
+        this.orderingClinicianId = Objects.requireNonNull(orderingClinicianId);
+        this.orderingClinicianName = Objects.requireNonNull(orderingClinicianName);
         this.description = Objects.requireNonNull(description);
         this.priority = Objects.requireNonNull(priority);
         this.createdAt = Objects.requireNonNull(createdAt);
@@ -50,8 +51,14 @@ public abstract class Order {
         return patientName;
     }
 
-    public String getOrderingClinician() {
-        return orderingClinician;
+    /** System id used for cancel verification (not shown as the primary label in the queue UI). */
+    public String getOrderingClinicianId() {
+        return orderingClinicianId;
+    }
+
+    /** Display name for queue and notifications. */
+    public String getOrderingClinicianName() {
+        return orderingClinicianName;
     }
 
     public String getDescription() {

@@ -1,14 +1,16 @@
 package com.hospital.oms.web.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.hospital.oms.domain.OrderType;
 import com.hospital.oms.domain.Priority;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+
 public record SubmitOrderRequest(
         @NotNull OrderType orderType,
         @NotBlank String patientName,
-        @NotBlank String orderingClinician,
+        @NotBlank @JsonAlias("orderingClinician") String orderingClinicianId,
         @NotBlank String description,
         @NotNull Priority priority,
-        @NotBlank String actor) {}
+        @NotBlank @JsonAlias("actor") String clinicianName) {}

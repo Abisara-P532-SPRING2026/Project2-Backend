@@ -18,6 +18,10 @@ public class ClaimOrderCommand implements OrderCommand {
     }
 
     @Override
+    public void undo(OrderManager manager) {
+        }
+
+    @Override
     public String getCommandType() {
         return "CLAIM";
     }

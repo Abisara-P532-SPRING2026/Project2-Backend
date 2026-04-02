@@ -5,16 +5,21 @@ import com.hospital.oms.manager.OrderManager;
 public class CancelOrderCommand implements OrderCommand {
 
     private final String orderId;
-    private final String actor;
+    private final String clinicianId;
 
-    public CancelOrderCommand(String orderId, String actor) {
+    public CancelOrderCommand(String orderId, String clinicianId) {
         this.orderId = orderId;
-        this.actor = actor;
+        this.clinicianId = clinicianId;
     }
 
     @Override
     public void execute(OrderManager manager) {
         manager.cancel(this);
+    }
+
+    @Override
+    public void undo(OrderManager manager) {
+        
     }
 
     @Override
@@ -29,6 +34,10 @@ public class CancelOrderCommand implements OrderCommand {
 
     @Override
     public String getActor() {
-        return actor;
+        return clinicianId;
+    }
+
+    public String getClinicianId() {
+        return clinicianId;
     }
 }

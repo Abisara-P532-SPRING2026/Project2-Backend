@@ -8,6 +8,7 @@ import com.hospital.oms.commandlog.InMemoryCommandLog;
 import com.hospital.oms.domain.OrderStatus;
 import com.hospital.oms.domain.OrderType;
 import com.hospital.oms.domain.Priority;
+import com.hospital.oms.engine.OrderStorageEngine;
 import com.hospital.oms.engine.TriagingEngine;
 import com.hospital.oms.factory.OrderFactory;
 import com.hospital.oms.handler.BaseOrderProcessingHandler;
@@ -26,23 +27,24 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class OrderManagerTest {
 
-    private OrderAccess orderAccess;
+    private OrderStorageEngine orderStorageEngine;
     private OrderManager orderManager;
     private NotificationService notifications;
 
     @BeforeEach
     void setUp() {
-        orderAccess = new OrderAccess();
+        OrderAccess access = new OrderAccess();
+        orderStorageEngine = new OrderStorageEngine(access);
         notifications = Mockito.mock(NotificationService.class);
         OrderFactory factory = new OrderFactory();
         OrderProcessingHandler pipeline =
-                new ValidatingOrderHandlerDecorator(new BaseOrderProcessingHandler(orderAccess));
+                new ValidatingOrderHandlerDecorator(new BaseOrderProcessingHandler(orderStorageEngine));
         TriagingEngine engine = new TriagingEngine(new PriorityFirstTriageStrategy());
         orderManager =
                 new OrderManager(
                         factory,
                         pipeline,
-                        orderAccess,
+                        orderStorageEngine,
                         engine,
                         notifications,
                         new InMemoryCommandLog());
@@ -51,7 +53,7 @@ class OrderManagerTest {
     @Test
     void submitThenClaimCompleteAndCancelPaths() {
         SubmitOrderCommand submit =
-                new SubmitOrderCommand(OrderType.LAB, "pat", "cli", "desc", Priority.ROUTINE, "actor");
+                new SubmitOrderCommand(OrderType.LAB, "pat", "cliId", "desc", Priority.ROUTINE, "Dr Cli");
         orderManager.execute(submit);
         String id = submit.getOrderId();
         assertThat(id).isNotBlank();
@@ -69,28 +71,51 @@ class OrderManagerTest {
         assertThat(orderManager.getOrderById(id).orElseThrow().getStatus()).isEqualTo(OrderStatus.COMPLETED);
 
         SubmitOrderCommand second =
-                new SubmitOrderCommand(OrderType.MEDICATION, "p2", "c2", "d2", Priority.ROUTINE, "a2");
+                new SubmitOrderCommand(OrderType.MEDICATION, "p2", "c2id", "d2", Priority.ROUTINE, "Dr Two");
         orderManager.execute(second);
         String id2 = second.getOrderId();
-        orderManager.execute(new CancelOrderCommand(id2, "a2"));
+        orderManager.execute(new CancelOrderCommand(id2, "c2id"));
         assertThat(orderManager.getOrderById(id2).orElseThrow().getStatus()).isEqualTo(OrderStatus.CANCELLED);
     }
 
     @Test
     void cancelRejectsNonPending() {
         SubmitOrderCommand submit =
-                new SubmitOrderCommand(OrderType.LAB, "p", "c", "d", Priority.ROUTINE, "a");
+                new SubmitOrderCommand(OrderType.LAB, "p", "cid", "d", Priority.ROUTINE, "Dr C");
         orderManager.execute(submit);
         String id = submit.getOrderId();
         orderManager.execute(new ClaimOrderCommand(id, "staff1"));
-        assertThatThrownBy(() -> orderManager.execute(new CancelOrderCommand(id, "a")))
+        assertThatThrownBy(() -> orderManager.execute(new CancelOrderCommand(id, "cid")))
                 .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void cancelRejectsWrongClinician() {
+        SubmitOrderCommand submit =
+                new SubmitOrderCommand(OrderType.LAB, "p", "ownerId", "d", Priority.ROUTINE, "Dr Owner");
+        orderManager.execute(submit);
+        String id = submit.getOrderId();
+
+        assertThatThrownBy(() -> orderManager.execute(new CancelOrderCommand(id, "otherId")))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Clinician ID does not match");
+    }
+
+    @Test
+    void cancelSucceedsWithMatchingClinician() {
+        SubmitOrderCommand submit =
+                new SubmitOrderCommand(OrderType.LAB, "p", "ownerId", "d", Priority.ROUTINE, "Dr Owner");
+        orderManager.execute(submit);
+        String id = submit.getOrderId();
+
+        orderManager.execute(new CancelOrderCommand(id, "ownerId"));
+        assertThat(orderManager.getOrderById(id).orElseThrow().getStatus()).isEqualTo(OrderStatus.CANCELLED);
     }
 
     @Test
     void notificationsOnStatusChanges() {
         SubmitOrderCommand submit =
-                new SubmitOrderCommand(OrderType.IMAGING, "p", "c", "d", Priority.STAT, "a");
+                new SubmitOrderCommand(OrderType.IMAGING, "p", "cid", "d", Priority.STAT, "Dr Stat");
         orderManager.execute(submit);
         String id = submit.getOrderId();
         orderManager.execute(new ClaimOrderCommand(id, "s"));

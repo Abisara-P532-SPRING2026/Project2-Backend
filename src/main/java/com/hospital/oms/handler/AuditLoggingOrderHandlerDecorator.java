@@ -1,13 +1,11 @@
 package com.hospital.oms.handler;
 
-/**
- * Decorator: pipeline audit without modifying the base handler.
- */
+
 public class AuditLoggingOrderHandlerDecorator implements OrderProcessingHandler {
 
     private final OrderProcessingHandler delegate;
 
-    public AuditLoggingOrderHandlerDecorator(PriorityBoostingOrderHandlerDecorator delegate) {
+    public AuditLoggingOrderHandlerDecorator(OrderProcessingHandler delegate) {
         this.delegate = delegate;
     }
 

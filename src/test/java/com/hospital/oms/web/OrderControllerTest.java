@@ -11,6 +11,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Map;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -30,13 +32,14 @@ class OrderControllerTest {
     void submitAndReadQueue() throws Exception {
         SubmitOrderRequest body =
                 new SubmitOrderRequest(
-                        OrderType.LAB, "Jane", "Dr. Who", "CBC", Priority.URGENT, "dr.who");
+                        OrderType.LAB, "Jane", "dr.who", "CBC", Priority.URGENT, "Dr. Who");
         mockMvc.perform(
                         post("/api/orders")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.patientName").value("Jane"));
+                .andExpect(jsonPath("$.patientName").value("Jane"))
+                .andExpect(jsonPath("$.clinicianName").value("Dr. Who"));
 
         mockMvc.perform(get("/api/orders/pending-queue"))
                 .andExpect(status().isOk())
@@ -44,10 +47,62 @@ class OrderControllerTest {
     }
 
     @Test
+    void cancelRejectsNonPending() throws Exception {
+        SubmitOrderRequest body =
+                new SubmitOrderRequest(
+                        OrderType.LAB, "Pat", "dr.real", "Labs", Priority.ROUTINE, "Dr. Real");
+        String json =
+                mockMvc.perform(
+                                post("/api/orders")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(objectMapper.writeValueAsString(body)))
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+        String orderId = objectMapper.readTree(json).get("id").asText();
+
+        mockMvc.perform(
+                        post("/api/orders/" + orderId + "/claim")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(Map.of("staffId", "staff1"))))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(
+                        post("/api/orders/" + orderId + "/cancel")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(Map.of("clinicianId", "dr.real"))))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void cancelRejectsWrongClinician() throws Exception {
+        SubmitOrderRequest body =
+                new SubmitOrderRequest(
+                        OrderType.LAB, "Pat", "owner.id", "Labs", Priority.ROUTINE, "Dr. Owner");
+        String json =
+                mockMvc.perform(
+                                post("/api/orders")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(objectMapper.writeValueAsString(body)))
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+        String orderId = objectMapper.readTree(json).get("id").asText();
+
+        mockMvc.perform(
+                        post("/api/orders/" + orderId + "/cancel")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(Map.of("clinicianId", "wrong.id"))))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
     void auditListsCommands() throws Exception {
         SubmitOrderRequest body =
                 new SubmitOrderRequest(
-                        OrderType.MEDICATION, "A", "B", "Rx", Priority.ROUTINE, "nurse1");
+                        OrderType.MEDICATION, "A", "nurse1", "Rx", Priority.ROUTINE, "Nurse One");
         mockMvc.perform(
                 post("/api/orders")
                         .contentType(MediaType.APPLICATION_JSON)

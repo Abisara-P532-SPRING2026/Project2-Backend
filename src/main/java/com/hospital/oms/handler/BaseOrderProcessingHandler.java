@@ -1,20 +1,18 @@
 package com.hospital.oms.handler;
 
-import com.hospital.oms.resourceaccess.OrderAccess;
+import com.hospital.oms.engine.OrderStorageEngine;
 
-/**
- * Innermost handler: persists the order without knowing about outer decorators.
- */
+
 public class BaseOrderProcessingHandler implements OrderProcessingHandler {
 
-    private final OrderAccess orderAccess;
+    private final OrderStorageEngine orderStorageEngine;
 
-    public BaseOrderProcessingHandler(OrderAccess orderAccess) {
-        this.orderAccess = orderAccess;
+    public BaseOrderProcessingHandler(OrderStorageEngine orderStorageEngine) {
+        this.orderStorageEngine = orderStorageEngine;
     }
 
     @Override
     public void handleSubmit(OrderProcessingContext context) {
-        orderAccess.saveOrder(context.getOrder());
+        orderStorageEngine.saveOrder(context.getOrder());
     }
 }

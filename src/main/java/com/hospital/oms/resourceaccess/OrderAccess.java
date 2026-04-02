@@ -11,9 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Resource Access layer: in-memory order store with atomic verbs.
- */
+
 @Component
 public class OrderAccess {
 

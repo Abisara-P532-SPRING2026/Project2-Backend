@@ -9,26 +9,24 @@ import com.hospital.oms.commandlog.CommandLogEntry;
 import com.hospital.oms.commandlog.InMemoryCommandLog;
 import com.hospital.oms.domain.Order;
 import com.hospital.oms.domain.OrderStatus;
+import com.hospital.oms.engine.OrderStorageEngine;
 import com.hospital.oms.engine.TriagingEngine;
 import com.hospital.oms.factory.OrderFactory;
 import com.hospital.oms.handler.OrderProcessingContext;
 import com.hospital.oms.handler.OrderProcessingHandler;
 import com.hospital.oms.notification.NotificationService;
-import com.hospital.oms.resourceaccess.OrderAccess;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.Optional;
 
-/**
- * Manager layer: orchestrates order use cases; entry point for commands and engines.
- */
+
 @Service
 public class OrderManager {
 
     private final OrderFactory orderFactory;
     private final OrderProcessingHandler submissionPipeline;
-    private final OrderAccess orderAccess;
+    private final OrderStorageEngine orderStorageEngine;
     private final TriagingEngine triagingEngine;
     private final NotificationService notificationService;
     private final InMemoryCommandLog commandLog;
@@ -36,13 +34,13 @@ public class OrderManager {
     public OrderManager(
             OrderFactory orderFactory,
             OrderProcessingHandler submissionPipeline,
-            OrderAccess orderAccess,
+            OrderStorageEngine orderStorageEngine,
             TriagingEngine triagingEngine,
             NotificationService notificationService,
             InMemoryCommandLog commandLog) {
         this.orderFactory = orderFactory;
         this.submissionPipeline = submissionPipeline;
-        this.orderAccess = orderAccess;
+        this.orderStorageEngine = orderStorageEngine;
         this.triagingEngine = triagingEngine;
         this.notificationService = notificationService;
         this.commandLog = commandLog;
@@ -51,16 +49,18 @@ public class OrderManager {
     public void execute(OrderCommand command) {
         command.execute(this);
         commandLog.append(
-                new CommandLogEntry(Instant.now(), command.getCommandType(), command.getOrderId(), command.getActor()));
+                new CommandLogEntry(
+                        Instant.now(), command.getCommandType(), command.getOrderId(), command.getActor()));
     }
 
     public void submit(SubmitOrderCommand cmd) {
         Order order =
                 orderFactory.createOrder(
                         cmd.getType(),
-                        cmd.getPatientName(),
-                        cmd.getOrderingClinician(),
-                        cmd.getDescription(),
+                        cmd.getPatientName().trim(),
+                        cmd.getOrderingClinicianId().trim(),
+                        cmd.getClinicianName().trim(),
+                        cmd.getDescription().trim(),
                         cmd.getPriority(),
                         Instant.now());
         submissionPipeline.handleSubmit(new OrderProcessingContext(order));
@@ -70,26 +70,27 @@ public class OrderManager {
 
     public void claim(ClaimOrderCommand cmd) {
         Order order =
-                orderAccess
+                orderStorageEngine
                         .findOrderById(cmd.getOrderId())
                         .orElseThrow(() -> new IllegalArgumentException("Order not found: " + cmd.getOrderId()));
         if (order.getStatus() != OrderStatus.PENDING) {
             throw new IllegalStateException("Only PENDING orders can be claimed.");
         }
         order.setStatus(OrderStatus.IN_PROGRESS);
-        order.setClaimedByStaffId(cmd.getStaffId());
+        order.setClaimedByStaffId(cmd.getStaffId().trim());
         notificationService.notify(order, "CLAIMED");
     }
 
     public void complete(CompleteOrderCommand cmd) {
         Order order =
-                orderAccess
+                orderStorageEngine
                         .findOrderById(cmd.getOrderId())
                         .orElseThrow(() -> new IllegalArgumentException("Order not found: " + cmd.getOrderId()));
         if (order.getStatus() != OrderStatus.IN_PROGRESS) {
             throw new IllegalStateException("Only IN_PROGRESS orders can be completed.");
         }
-        if (order.getClaimedByStaffId() == null || !order.getClaimedByStaffId().equals(cmd.getStaffId())) {
+        if (order.getClaimedByStaffId() == null
+                || !order.getClaimedByStaffId().equals(cmd.getStaffId().trim())) {
             throw new IllegalStateException("This order is locked to another staff member.");
         }
         order.setStatus(OrderStatus.COMPLETED);
@@ -98,22 +99,29 @@ public class OrderManager {
 
     public void cancel(CancelOrderCommand cmd) {
         Order order =
-                orderAccess
+                orderStorageEngine
                         .findOrderById(cmd.getOrderId())
                         .orElseThrow(() -> new IllegalArgumentException("Order not found: " + cmd.getOrderId()));
         if (order.getStatus() != OrderStatus.PENDING) {
             throw new IllegalStateException("Only PENDING orders can be cancelled.");
+        }
+        String expected = order.getOrderingClinicianId().trim();
+        String provided = cmd.getClinicianId() == null ? "" : cmd.getClinicianId().trim();
+        if (!expected.equals(provided)) {
+            throw new IllegalStateException(
+                    "Clinician ID does not match this order. Enter the same clinician id as on the submit form "
+                            + "(not the name shown in the queue, and not fulfilment staff id).");
         }
         order.setStatus(OrderStatus.CANCELLED);
         notificationService.notify(order, "CANCELLED");
     }
 
     public java.util.List<Order> getPendingQueueSorted() {
-        return triagingEngine.sortPendingQueue(orderAccess.listPendingOrders());
+        return triagingEngine.sortPendingQueue(orderStorageEngine.listPendingOrders());
     }
 
     public java.util.List<Order> getInProgressOrders() {
-        return orderAccess.listInProgressOrders();
+        return orderStorageEngine.listInProgressOrders();
     }
 
     public java.util.List<com.hospital.oms.commandlog.CommandLogEntry> getAuditTrail() {
@@ -121,6 +129,6 @@ public class OrderManager {
     }
 
     public Optional<Order> getOrderById(String id) {
-        return orderAccess.findOrderById(id);
+        return orderStorageEngine.findOrderById(id);
     }
 }
