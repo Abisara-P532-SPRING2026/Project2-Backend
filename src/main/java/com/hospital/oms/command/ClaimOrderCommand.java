@@ -19,7 +19,8 @@ public class ClaimOrderCommand implements OrderCommand {
 
     @Override
     public void undo(OrderManager manager) {
-        }
+        manager.undoClaim(this);
+    }
 
     @Override
     public String getCommandType() {

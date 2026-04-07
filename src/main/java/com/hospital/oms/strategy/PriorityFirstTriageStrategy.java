@@ -4,16 +4,21 @@ import com.hospital.oms.domain.Order;
 import com.hospital.oms.domain.Priority;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
 @Component
 public class PriorityFirstTriageStrategy implements TriageStrategy {
 
     @Override
-    public int compareQueuePosition(Order a, Order b) {
-        int pr = Integer.compare(priorityRank(b.getPriority()), priorityRank(a.getPriority()));
-        if (pr != 0) {
-            return pr;
-        }
-        return a.getCreatedAt().compareTo(b.getCreatedAt());
+    public List<Order> sortPending(List<Order> pending, List<Order> inProgress) {
+        List<Order> copy = new ArrayList<>(pending);
+        copy.sort(
+                Comparator.comparingInt((Order o) -> priorityRank(o.getPriority()))
+                        .reversed()
+                        .thenComparing(Order::getCreatedAt));
+        return copy;
     }
 
     private static int priorityRank(Priority p) {

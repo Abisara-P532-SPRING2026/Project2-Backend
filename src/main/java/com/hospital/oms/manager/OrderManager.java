@@ -9,6 +9,7 @@ import com.hospital.oms.commandlog.CommandLogEntry;
 import com.hospital.oms.commandlog.InMemoryCommandLog;
 import com.hospital.oms.domain.Order;
 import com.hospital.oms.domain.OrderStatus;
+import com.hospital.oms.domain.OrderType;
 import com.hospital.oms.engine.OrderStorageEngine;
 import com.hospital.oms.engine.TriagingEngine;
 import com.hospital.oms.factory.OrderFactory;
@@ -30,6 +31,7 @@ public class OrderManager {
     private final TriagingEngine triagingEngine;
     private final NotificationService notificationService;
     private final InMemoryCommandLog commandLog;
+    private final CommandExecutionHistory commandExecutionHistory;
 
     public OrderManager(
             OrderFactory orderFactory,
@@ -37,17 +39,20 @@ public class OrderManager {
             OrderStorageEngine orderStorageEngine,
             TriagingEngine triagingEngine,
             NotificationService notificationService,
-            InMemoryCommandLog commandLog) {
+            InMemoryCommandLog commandLog,
+            CommandExecutionHistory commandExecutionHistory) {
         this.orderFactory = orderFactory;
         this.submissionPipeline = submissionPipeline;
         this.orderStorageEngine = orderStorageEngine;
         this.triagingEngine = triagingEngine;
         this.notificationService = notificationService;
         this.commandLog = commandLog;
+        this.commandExecutionHistory = commandExecutionHistory;
     }
 
     public void execute(OrderCommand command) {
         command.execute(this);
+        commandExecutionHistory.push(command);
         commandLog.append(
                 new CommandLogEntry(
                         Instant.now(), command.getCommandType(), command.getOrderId(), command.getActor()));
@@ -63,7 +68,7 @@ public class OrderManager {
                         cmd.getDescription().trim(),
                         cmd.getPriority(),
                         Instant.now());
-        submissionPipeline.handleSubmit(new OrderProcessingContext(order));
+        submissionPipeline.handleSubmit(new OrderProcessingContext(order, orderStorageEngine));
         cmd.setCreatedOrderId(order.getId());
         notificationService.notify(order, "SUBMITTED");
     }
@@ -120,6 +125,12 @@ public class OrderManager {
         return triagingEngine.sortPendingQueue(orderStorageEngine.listPendingOrders());
     }
 
+    public java.util.List<Order> getPendingQueueSorted(OrderType department) {
+        java.util.List<Order> pending =
+                orderStorageEngine.listPendingOrders().stream().filter(o -> o.getType() == department).toList();
+        return triagingEngine.sortPendingQueue(pending, department);
+    }
+
     public java.util.List<Order> getInProgressOrders() {
         return orderStorageEngine.listInProgressOrders();
     }
@@ -130,5 +141,58 @@ public class OrderManager {
 
     public Optional<Order> getOrderById(String id) {
         return orderStorageEngine.findOrderById(id);
+    }
+
+    public void undoLastCommand() {
+        OrderCommand last =
+                commandExecutionHistory
+                        .popLast()
+                        .orElseThrow(() -> new IllegalStateException("No command available to undo."));
+        last.undo(this);
+    }
+
+    public void replay(OrderCommand command) {
+        execute(command);
+    }
+
+    public void replayByAuditIndex(int newestFirstIndex) {
+        OrderCommand command =
+                commandExecutionHistory
+                        .byNewestIndex(newestFirstIndex)
+                        .orElseThrow(() -> new IllegalArgumentException("No command at audit index: " + newestFirstIndex));
+        execute(command);
+    }
+
+    public void undoSubmit(SubmitOrderCommand cmd) {
+        String id = cmd.getOrderId();
+        if (id != null && !id.isBlank()) {
+            orderStorageEngine.deleteOrderById(id);
+        }
+    }
+
+    public void undoClaim(ClaimOrderCommand cmd) {
+        Order order =
+                orderStorageEngine
+                        .findOrderById(cmd.getOrderId())
+                        .orElseThrow(() -> new IllegalArgumentException("Order not found: " + cmd.getOrderId()));
+        order.setStatus(OrderStatus.PENDING);
+        order.setClaimedByStaffId(null);
+    }
+
+    public void undoComplete(CompleteOrderCommand cmd) {
+        Order order =
+                orderStorageEngine
+                        .findOrderById(cmd.getOrderId())
+                        .orElseThrow(() -> new IllegalArgumentException("Order not found: " + cmd.getOrderId()));
+        order.setStatus(OrderStatus.IN_PROGRESS);
+        order.setClaimedByStaffId(cmd.getStaffId());
+    }
+
+    public void undoCancel(CancelOrderCommand cmd) {
+        Order order =
+                orderStorageEngine
+                        .findOrderById(cmd.getOrderId())
+                        .orElseThrow(() -> new IllegalArgumentException("Order not found: " + cmd.getOrderId()));
+        order.setStatus(OrderStatus.PENDING);
     }
 }

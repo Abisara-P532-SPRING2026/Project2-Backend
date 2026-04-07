@@ -25,6 +25,10 @@ public class OrderAccess {
         return Optional.ofNullable(orders.get(id));
     }
 
+    public void deleteOrderById(String id) {
+        orders.remove(id);
+    }
+
     public List<Order> listPendingOrders() {
         return filterByStatus(OrderStatus.PENDING);
     }

@@ -17,10 +17,13 @@ com/hospital/oms/command/ClaimOrderCommand.class
 com/hospital/oms/commandlog/InMemoryCommandLog.class
 com/hospital/oms/web/dto/StaffActionRequest.class
 com/hospital/oms/HospitalOrderManagementApplication.class
+com/hospital/oms/manager/CommandExecutionHistory.class
 com/hospital/oms/resourceaccess/OrderAccess.class
+com/hospital/oms/strategy/InMemoryDepartmentTriageSelector.class
 com/hospital/oms/web/ApiExceptionHandler.class
 com/hospital/oms/notification/ConsoleNotificationChannel.class
 com/hospital/oms/domain/LabOrder.class
+com/hospital/oms/strategy/DepartmentTriageSelector.class
 com/hospital/oms/handler/PriorityBoostingOrderHandlerDecorator.class
 com/hospital/oms/command/OrderCommand.class
 com/hospital/oms/command/CompleteOrderCommand.class

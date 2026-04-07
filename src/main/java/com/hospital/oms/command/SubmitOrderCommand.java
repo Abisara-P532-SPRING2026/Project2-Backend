@@ -37,6 +37,7 @@ public class SubmitOrderCommand implements OrderCommand {
 
     @Override
     public void undo(OrderManager manager) {
+        manager.undoSubmit(this);
     }
 
     @Override

@@ -25,6 +25,10 @@ public class OrderStorageEngine {
         return orderAccess.findOrderById(id);
     }
 
+    public void deleteOrderById(String id) {
+        orderAccess.deleteOrderById(id);
+    }
+
     public List<Order> listPendingOrders() {
         return orderAccess.listPendingOrders();
     }

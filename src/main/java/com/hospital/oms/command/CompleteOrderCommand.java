@@ -19,7 +19,8 @@ public class CompleteOrderCommand implements OrderCommand {
 
     @Override
     public void undo(OrderManager manager) {
-           }
+        manager.undoComplete(this);
+    }
 
     @Override
     public String getCommandType() {

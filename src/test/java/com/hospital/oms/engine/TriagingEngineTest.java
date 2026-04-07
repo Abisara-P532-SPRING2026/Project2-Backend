@@ -4,6 +4,8 @@ import com.hospital.oms.domain.LabOrder;
 import com.hospital.oms.domain.Order;
 import com.hospital.oms.domain.OrderStatus;
 import com.hospital.oms.domain.Priority;
+import com.hospital.oms.resourceaccess.OrderAccess;
+import com.hospital.oms.strategy.InMemoryDepartmentTriageSelector;
 import com.hospital.oms.strategy.PriorityFirstTriageStrategy;
 import org.junit.jupiter.api.Test;
 
@@ -15,7 +17,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class TriagingEngineTest {
 
-    private final TriagingEngine engine = new TriagingEngine(new PriorityFirstTriageStrategy());
+    private final TriagingEngine engine =
+            new TriagingEngine(
+                    new InMemoryDepartmentTriageSelector(new PriorityFirstTriageStrategy()),
+                    new OrderStorageEngine(new OrderAccess()));
 
     @Test
     void sortsStatBeforeUrgentBeforeRoutineThenFifo() {

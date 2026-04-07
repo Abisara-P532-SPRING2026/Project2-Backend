@@ -19,7 +19,7 @@ public class CancelOrderCommand implements OrderCommand {
 
     @Override
     public void undo(OrderManager manager) {
-        
+        manager.undoCancel(this);
     }
 
     @Override

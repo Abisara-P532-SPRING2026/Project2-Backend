@@ -16,6 +16,7 @@ import com.hospital.oms.handler.OrderProcessingHandler;
 import com.hospital.oms.handler.ValidatingOrderHandlerDecorator;
 import com.hospital.oms.notification.NotificationService;
 import com.hospital.oms.resourceaccess.OrderAccess;
+import com.hospital.oms.strategy.InMemoryDepartmentTriageSelector;
 import com.hospital.oms.strategy.PriorityFirstTriageStrategy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +40,10 @@ class OrderManagerTest {
         OrderFactory factory = new OrderFactory();
         OrderProcessingHandler pipeline =
                 new ValidatingOrderHandlerDecorator(new BaseOrderProcessingHandler(orderStorageEngine));
-        TriagingEngine engine = new TriagingEngine(new PriorityFirstTriageStrategy());
+        TriagingEngine engine =
+                new TriagingEngine(
+                        new InMemoryDepartmentTriageSelector(new PriorityFirstTriageStrategy()),
+                        orderStorageEngine);
         orderManager =
                 new OrderManager(
                         factory,
@@ -47,7 +51,8 @@ class OrderManagerTest {
                         orderStorageEngine,
                         engine,
                         notifications,
-                        new InMemoryCommandLog());
+                        new InMemoryCommandLog(),
+                        new CommandExecutionHistory());
     }
 
     @Test
