@@ -3,33 +3,24 @@ package com.hospital.oms.notification;
 import com.hospital.oms.domain.Order;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
 @Component
 public final class ConsoleNotificationChannel implements NotificationChannel {
 
     @Override
-    public void notify(Order order, String event) {
-        for (String party : partiesFor(event)) {
-            printToParty(party, order, event);
-        }
+    public NotificationChannelType type() {
+        return NotificationChannelType.CONSOLE;
     }
 
-    private static List<String> partiesFor(String event) {
-        return switch (event) {
-            case "SUBMITTED" -> List.of("patient", "ordering clinician", "fulfilment queue");
-            case "CLAIMED" -> List.of("patient", "ordering clinician", "assigned staff");
-            case "COMPLETED" -> List.of("patient", "ordering clinician", "assigned staff");
-            case "CANCELLED" -> List.of("patient", "ordering clinician", "administrators");
-            default -> List.of("stakeholders");
-        };
+    @Override
+    public void notify(NotificationRole role, Order order, String event) {
+        printToRole(role, order, event);
     }
 
-    private static void printToParty(String party, Order order, String event) {
-        String message = messageForParty(party, order, event);
+    private static void printToRole(NotificationRole role, Order order, String event) {
+        String message = messageForRole(role, order, event);
         System.out.printf(
                 "[NOTIFY → %s] %s | orderId=%s | type=%s | patient=%s | change=%s | status=%s%n",
-                party,
+                role,
                 message,
                 order.getId(),
                 order.getType(),
@@ -42,14 +33,14 @@ public final class ConsoleNotificationChannel implements NotificationChannel {
         return order.getOrderingClinicianName() + " [id=" + order.getOrderingClinicianId() + "]";
     }
 
-    private static String messageForParty(String party, Order order, String event) {
+    private static String messageForRole(NotificationRole role, Order order, String event) {
         String patient = order.getPatientName();
-        return switch (party) {
-            case "patient" -> patientMessage(patient, event, order);
-            case "ordering clinician" -> "To " + clinicianLabel(order) + ": " + clinicianMessage(event, order);
-            case "fulfilment queue" -> fulfilmentQueueMessage(order, event);
-            case "assigned staff" -> staffMessage(order, event);
-            case "administrators" -> "Admin: order cancelled for patient " + patient + " — retain audit trail.";
+        return switch (role) {
+            case PATIENT -> patientMessage(patient, event, order);
+            case ORDERING_CLINICIAN -> "To " + clinicianLabel(order) + ": " + clinicianMessage(event, order);
+            case FULFILMENT_QUEUE -> fulfilmentQueueMessage(order, event);
+            case ASSIGNED_STAFF -> staffMessage(order, event);
+            case ADMINISTRATORS -> "Admin: order cancelled for patient " + patient + " — retain audit trail.";
             default -> "Notice: " + event + " | order " + order.getId();
         };
     }

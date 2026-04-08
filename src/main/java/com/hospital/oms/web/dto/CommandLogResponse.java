@@ -8,13 +8,15 @@ import java.time.Instant;
  * Audit row for the API. Use {@code performedBy} only here — Jackson + records break if an extra
  * {@code @JsonProperty("actor")} accessor is added for the same value.
  */
-public record CommandLogResponse(Instant timestamp, String commandType, String orderId, String performedBy) {
+public record CommandLogResponse(
+        Instant timestamp, String commandType, String orderId, String performedBy, String details) {
 
     public static CommandLogResponse from(CommandLogEntry e) {
         String who = e.performedBy();
         if (who == null) {
             who = "";
         }
-        return new CommandLogResponse(e.timestamp(), e.commandType(), e.orderId(), who);
+        String details = e.details() == null ? "" : e.details();
+        return new CommandLogResponse(e.timestamp(), e.commandType(), e.orderId(), who, details);
     }
 }

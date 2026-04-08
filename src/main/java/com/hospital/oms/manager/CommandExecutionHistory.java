@@ -16,6 +16,7 @@ public class CommandExecutionHistory {
     private final List<OrderCommand> timeline = new ArrayList<>();
 
     public synchronized void push(OrderCommand command) {
+        stack.clear();
         stack.push(command);
         timeline.add(command);
     }

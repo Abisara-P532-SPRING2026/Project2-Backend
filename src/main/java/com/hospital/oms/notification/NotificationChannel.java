@@ -4,5 +4,7 @@ import com.hospital.oms.domain.Order;
 
 public interface NotificationChannel {
 
-    void notify(Order order, String event);
+    NotificationChannelType type();
+
+    void notify(NotificationRole role, Order order, String event);
 }

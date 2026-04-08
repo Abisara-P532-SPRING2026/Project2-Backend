@@ -36,4 +36,8 @@ public class OrderStorageEngine {
     public List<Order> listInProgressOrders() {
         return orderAccess.listInProgressOrders();
     }
+
+    public List<Order> listAllOrders() {
+        return orderAccess.listAllOrders();
+    }
 }

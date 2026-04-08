@@ -16,7 +16,9 @@ import com.hospital.oms.handler.OrderProcessingHandler;
 import com.hospital.oms.handler.ValidatingOrderHandlerDecorator;
 import com.hospital.oms.notification.NotificationService;
 import com.hospital.oms.resourceaccess.OrderAccess;
+import com.hospital.oms.strategy.DeadlineFirstTriageStrategy;
 import com.hospital.oms.strategy.InMemoryDepartmentTriageSelector;
+import com.hospital.oms.strategy.LoadBalancingTriageStrategy;
 import com.hospital.oms.strategy.PriorityFirstTriageStrategy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,7 +44,10 @@ class OrderManagerTest {
                 new ValidatingOrderHandlerDecorator(new BaseOrderProcessingHandler(orderStorageEngine));
         TriagingEngine engine =
                 new TriagingEngine(
-                        new InMemoryDepartmentTriageSelector(new PriorityFirstTriageStrategy()),
+                        new InMemoryDepartmentTriageSelector(
+                                new PriorityFirstTriageStrategy(),
+                                new LoadBalancingTriageStrategy(),
+                                new DeadlineFirstTriageStrategy()),
                         orderStorageEngine);
         orderManager =
                 new OrderManager(

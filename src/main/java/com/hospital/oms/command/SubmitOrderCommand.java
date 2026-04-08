@@ -4,6 +4,8 @@ import com.hospital.oms.domain.OrderType;
 import com.hospital.oms.domain.Priority;
 import com.hospital.oms.manager.OrderManager;
 
+import java.util.Map;
+
 public class SubmitOrderCommand implements OrderCommand {
 
     private final OrderType type;
@@ -14,6 +16,7 @@ public class SubmitOrderCommand implements OrderCommand {
     /** Clinician name for audit log / display. */
     private final String clinicianName;
     private String createdOrderId;
+    private Map<String, String> submitAuditDetails = Map.of();
 
     public SubmitOrderCommand(
             OrderType type,
@@ -84,5 +87,13 @@ public class SubmitOrderCommand implements OrderCommand {
 
     public Priority getPriority() {
         return priority;
+    }
+
+    public Map<String, String> getSubmitAuditDetails() {
+        return submitAuditDetails;
+    }
+
+    public void setSubmitAuditDetails(Map<String, String> submitAuditDetails) {
+        this.submitAuditDetails = submitAuditDetails == null ? Map.of() : Map.copyOf(submitAuditDetails);
     }
 }

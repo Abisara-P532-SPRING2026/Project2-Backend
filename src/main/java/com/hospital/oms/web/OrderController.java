@@ -5,9 +5,13 @@ import com.hospital.oms.command.ClaimOrderCommand;
 import com.hospital.oms.command.CompleteOrderCommand;
 import com.hospital.oms.command.OrderCommand;
 import com.hospital.oms.command.SubmitOrderCommand;
+import com.hospital.oms.domain.OrderType;
 import com.hospital.oms.manager.OrderManager;
+import com.hospital.oms.strategy.InMemoryDepartmentTriageSelector;
 import com.hospital.oms.web.dto.CancelRequest;
 import com.hospital.oms.web.dto.CommandLogResponse;
+import com.hospital.oms.web.dto.DepartmentTriageConfigResponse;
+import com.hospital.oms.web.dto.DepartmentTriageUpdateRequest;
 import com.hospital.oms.web.dto.OrderResponse;
 import com.hospital.oms.web.dto.StaffActionRequest;
 import com.hospital.oms.web.dto.SubmitOrderRequest;
@@ -20,15 +24,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
 public class OrderController {
 
     private final OrderManager orderManager;
+    private final InMemoryDepartmentTriageSelector triageSelector;
 
-    public OrderController(OrderManager orderManager) {
+    public OrderController(OrderManager orderManager, InMemoryDepartmentTriageSelector triageSelector) {
         this.orderManager = orderManager;
+        this.triageSelector = triageSelector;
     }
 
     @GetMapping("/orders/pending-queue")
@@ -91,5 +98,29 @@ public class OrderController {
     @GetMapping("/audit")
     public List<CommandLogResponse> audit() {
         return orderManager.getAuditTrail().stream().map(CommandLogResponse::from).toList();
+    }
+
+    @GetMapping("/triage/departments/{department}")
+    public DepartmentTriageConfigResponse getDepartmentTriage(@PathVariable OrderType department) {
+        return new DepartmentTriageConfigResponse(department, triageSelector.getSelectedType(department));
+    }
+
+    @PostMapping("/triage/departments/{department}")
+    public DepartmentTriageConfigResponse updateDepartmentTriage(
+            @PathVariable OrderType department, @Valid @RequestBody DepartmentTriageUpdateRequest body) {
+        triageSelector.set(department, body.strategy());
+        return new DepartmentTriageConfigResponse(department, triageSelector.getSelectedType(department));
+    }
+
+    @PostMapping("/admin/undo")
+    public Map<String, String> undoLastCommand() {
+        orderManager.undoLastCommand();
+        return Map.of("status", "OK", "message", "Last command undone.");
+    }
+
+    @PostMapping("/admin/replay/{auditIndex}")
+    public Map<String, String> replayByAuditIndex(@PathVariable int auditIndex) {
+        orderManager.replayByAuditIndex(auditIndex);
+        return Map.of("status", "OK", "message", "Command replayed.", "auditIndex", String.valueOf(auditIndex));
     }
 }

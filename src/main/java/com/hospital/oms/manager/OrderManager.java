@@ -19,7 +19,9 @@ import com.hospital.oms.notification.NotificationService;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -52,10 +54,20 @@ public class OrderManager {
 
     public void execute(OrderCommand command) {
         command.execute(this);
+        String details = "";
+        if (command instanceof SubmitOrderCommand submitOrderCommand) {
+            details = submitOrderCommand.getSubmitAuditDetails().entrySet().stream()
+                    .map(e -> e.getKey() + "=" + e.getValue())
+                    .collect(Collectors.joining(";"));
+        }
         commandExecutionHistory.push(command);
         commandLog.append(
                 new CommandLogEntry(
-                        Instant.now(), command.getCommandType(), command.getOrderId(), command.getActor()));
+                        Instant.now(),
+                        command.getCommandType(),
+                        command.getOrderId(),
+                        command.getActor(),
+                        details));
     }
 
     public void submit(SubmitOrderCommand cmd) {
@@ -68,7 +80,9 @@ public class OrderManager {
                         cmd.getDescription().trim(),
                         cmd.getPriority(),
                         Instant.now());
-        submissionPipeline.handleSubmit(new OrderProcessingContext(order, orderStorageEngine));
+        OrderProcessingContext processingContext = new OrderProcessingContext(order, orderStorageEngine);
+        submissionPipeline.handleSubmit(processingContext);
+        cmd.setSubmitAuditDetails(processingContext.getAuditDetails());
         cmd.setCreatedOrderId(order.getId());
         notificationService.notify(order, "SUBMITTED");
     }

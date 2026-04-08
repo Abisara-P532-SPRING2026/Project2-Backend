@@ -112,4 +112,85 @@ class OrderControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].commandType").value("SUBMIT"));
     }
+
+    @Test
+    void updatesDepartmentTriageStrategyAtRuntime() throws Exception {
+        mockMvc.perform(
+                        post("/api/triage/departments/LAB")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(Map.of("strategy", "DEADLINE_FIRST"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.department").value("LAB"))
+                .andExpect(jsonPath("$.strategy").value("DEADLINE_FIRST"));
+
+        mockMvc.perform(get("/api/triage/departments/LAB"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.department").value("LAB"))
+                .andExpect(jsonPath("$.strategy").value("DEADLINE_FIRST"));
+    }
+
+    @Test
+    void adminUndoRevertsMostRecentCommand() throws Exception {
+        SubmitOrderRequest body =
+                new SubmitOrderRequest(
+                        OrderType.LAB, "Undo Pat", "undo.dr", "CBC", Priority.URGENT, "Dr Undo");
+        String submittedJson =
+                mockMvc.perform(
+                                post("/api/orders")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(objectMapper.writeValueAsString(body)))
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+        String orderId = objectMapper.readTree(submittedJson).get("id").asText();
+
+        mockMvc.perform(
+                        post("/api/orders/" + orderId + "/claim")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(Map.of("staffId", "staff1"))))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/admin/undo"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("OK"));
+
+        mockMvc.perform(get("/api/orders/pending-queue"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(orderId))
+                .andExpect(jsonPath("$[0].status").value("PENDING"));
+    }
+
+    @Test
+    void adminReplayByAuditIndexReexecutesCommand() throws Exception {
+        SubmitOrderRequest body =
+                new SubmitOrderRequest(
+                        OrderType.LAB, "Replay Pat", "replay.dr", "CMP", Priority.ROUTINE, "Dr Replay");
+        String submittedJson =
+                mockMvc.perform(
+                                post("/api/orders")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(objectMapper.writeValueAsString(body)))
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+        String orderId = objectMapper.readTree(submittedJson).get("id").asText();
+
+        mockMvc.perform(
+                        post("/api/orders/" + orderId + "/cancel")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(Map.of("clinicianId", "replay.dr"))))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/admin/replay/0"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("OK"))
+                .andExpect(jsonPath("$.auditIndex").value("0"));
+
+        mockMvc.perform(get("/api/orders/pending-queue"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(orderId))
+                .andExpect(jsonPath("$[0].status").value("PENDING"));
+    }
 }

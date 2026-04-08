@@ -12,7 +12,7 @@ public abstract class Order {
     private final String orderingClinicianId;
     private final String orderingClinicianName;
     private final String description;
-    private final Priority priority;
+    private Priority priority;
     private final Instant createdAt;
 
     private OrderStatus status;
@@ -67,6 +67,10 @@ public abstract class Order {
 
     public Priority getPriority() {
         return priority;
+    }
+
+    public void setPriority(Priority priority) {
+        this.priority = Objects.requireNonNull(priority);
     }
 
     public Instant getCreatedAt() {
