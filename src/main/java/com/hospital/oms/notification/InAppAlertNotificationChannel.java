@@ -20,11 +20,5 @@ public class InAppAlertNotificationChannel implements NotificationChannel {
     @Override
     public void notify(NotificationRole role, Order order, String event) {
         badgeStore.increment(role);
-        System.out.printf(
-                "[IN_APP_ALERT] role=%s badge=%d orderId=%s event=%s%n",
-                role,
-                badgeStore.snapshot().getOrDefault(role, 0),
-                order.getId(),
-                event);
     }
 }

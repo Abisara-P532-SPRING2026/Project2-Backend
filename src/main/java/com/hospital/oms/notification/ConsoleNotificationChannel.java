@@ -19,10 +19,9 @@ public final class ConsoleNotificationChannel implements NotificationChannel {
     private static void printToRole(NotificationRole role, Order order, String event) {
         String message = messageForRole(role, order, event);
         System.out.printf(
-                "[NOTIFY → %s] %s | orderId=%s | type=%s | patient=%s | change=%s | status=%s%n",
+                "[NOTIFY → %s] %s | type=%s | patient=%s | change=%s | status=%s%n",
                 role,
                 message,
-                order.getId(),
                 order.getType(),
                 order.getPatientName(),
                 event,
@@ -37,10 +36,8 @@ public final class ConsoleNotificationChannel implements NotificationChannel {
         String patient = order.getPatientName();
         return switch (role) {
             case PATIENT -> patientMessage(patient, event, order);
-            case ORDERING_CLINICIAN -> "To " + clinicianLabel(order) + ": " + clinicianMessage(event, order);
-            case FULFILMENT_QUEUE -> fulfilmentQueueMessage(order, event);
-            case ASSIGNED_STAFF -> staffMessage(order, event);
-            case ADMINISTRATORS -> "Admin: order cancelled for patient " + patient + " — retain audit trail.";
+            case CLINICIAN -> "To " + clinicianLabel(order) + ": " + clinicianMessage(event, order);
+            case FULFILMENT_STAFF -> fulfilmentStaffMessage(order, event);
             default -> "Notice: " + event + " | order " + order.getId();
         };
     }
@@ -79,24 +76,15 @@ public final class ConsoleNotificationChannel implements NotificationChannel {
         };
     }
 
-    private static String fulfilmentQueueMessage(Order order, String event) {
-        if ("SUBMITTED".equals(event)) {
-            return "Fulfilment queue: new "
-                    + order.getType()
-                    + " order — patient "
-                    + order.getPatientName()
-                    + ", priority "
-                    + order.getPriority()
-                    + ", ordered by "
-                    + clinicianLabel(order)
-                    + " — available to claim.";
-        }
-        return "Fulfilment: " + event + " | patient=" + order.getPatientName();
-    }
-
-    private static String staffMessage(Order order, String event) {
+    private static String fulfilmentStaffMessage(Order order, String event) {
         String sid = order.getClaimedByStaffId();
         return switch (event) {
+            case "SUBMITTED" ->
+                    "Fulfilment staff: new "
+                            + order.getType()
+                            + " order for patient "
+                            + order.getPatientName()
+                            + " is available to claim.";
             case "CLAIMED" ->
                     "Staff "
                             + sid

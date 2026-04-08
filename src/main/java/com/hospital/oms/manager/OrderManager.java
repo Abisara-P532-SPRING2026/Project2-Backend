@@ -16,9 +16,13 @@ import com.hospital.oms.factory.OrderFactory;
 import com.hospital.oms.handler.OrderProcessingContext;
 import com.hospital.oms.handler.OrderProcessingHandler;
 import com.hospital.oms.notification.NotificationService;
+import com.hospital.oms.strategy.InMemoryDepartmentTriageSelector;
+import com.hospital.oms.strategy.TriageStrategyType;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -31,6 +35,7 @@ public class OrderManager {
     private final OrderProcessingHandler submissionPipeline;
     private final OrderStorageEngine orderStorageEngine;
     private final TriagingEngine triagingEngine;
+    private final InMemoryDepartmentTriageSelector triageSelector;
     private final NotificationService notificationService;
     private final InMemoryCommandLog commandLog;
     private final CommandExecutionHistory commandExecutionHistory;
@@ -40,6 +45,7 @@ public class OrderManager {
             OrderProcessingHandler submissionPipeline,
             OrderStorageEngine orderStorageEngine,
             TriagingEngine triagingEngine,
+            InMemoryDepartmentTriageSelector triageSelector,
             NotificationService notificationService,
             InMemoryCommandLog commandLog,
             CommandExecutionHistory commandExecutionHistory) {
@@ -47,6 +53,7 @@ public class OrderManager {
         this.submissionPipeline = submissionPipeline;
         this.orderStorageEngine = orderStorageEngine;
         this.triagingEngine = triagingEngine;
+        this.triageSelector = triageSelector;
         this.notificationService = notificationService;
         this.commandLog = commandLog;
         this.commandExecutionHistory = commandExecutionHistory;
@@ -95,9 +102,39 @@ public class OrderManager {
         if (order.getStatus() != OrderStatus.PENDING) {
             throw new IllegalStateException("Only PENDING orders can be claimed.");
         }
+        if (triageSelector.getSelectedType(order.getType()) == TriageStrategyType.LOAD_BALANCING) {
+            enforceLoadBalancingClaimPolicy(order, cmd.getStaffId().trim());
+        }
         order.setStatus(OrderStatus.IN_PROGRESS);
         order.setClaimedByStaffId(cmd.getStaffId().trim());
         notificationService.notify(order, "CLAIMED");
+    }
+
+    private void enforceLoadBalancingClaimPolicy(Order order, String staffId) {
+        List<Order> departmentPending = getPendingQueueSorted(order.getType());
+        if (departmentPending.isEmpty() || !departmentPending.get(0).getId().equals(order.getId())) {
+            throw new IllegalStateException(
+                    "Load-balancing is active: claim the next queued order for this department.");
+        }
+
+        Map<String, Integer> loadByStaff = new HashMap<>();
+        for (Order inProgress : orderStorageEngine.listInProgressOrders()) {
+            if (inProgress.getType() != order.getType()) {
+                continue;
+            }
+            String sid = inProgress.getClaimedByStaffId();
+            if (sid == null || sid.isBlank()) {
+                continue;
+            }
+            loadByStaff.merge(sid, 1, Integer::sum);
+        }
+        loadByStaff.putIfAbsent(staffId, 0);
+        int claimantLoad = loadByStaff.getOrDefault(staffId, 0);
+        int minLoad = loadByStaff.values().stream().min(Integer::compareTo).orElse(0);
+        if (claimantLoad > minLoad) {
+            throw new IllegalStateException(
+                    "Load-balancing is active: only least-loaded staff can claim next order.");
+        }
     }
 
     public void complete(CompleteOrderCommand cmd) {

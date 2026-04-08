@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -39,8 +40,11 @@ public class OrderController {
     }
 
     @GetMapping("/orders/pending-queue")
-    public List<OrderResponse> pendingQueue() {
-        return orderManager.getPendingQueueSorted().stream().map(OrderResponse::from).toList();
+    public List<OrderResponse> pendingQueue(@RequestParam(required = false) OrderType department) {
+        if (department == null) {
+            return orderManager.getPendingQueueSorted().stream().map(OrderResponse::from).toList();
+        }
+        return orderManager.getPendingQueueSorted(department).stream().map(OrderResponse::from).toList();
     }
 
     @GetMapping("/orders/in-progress")

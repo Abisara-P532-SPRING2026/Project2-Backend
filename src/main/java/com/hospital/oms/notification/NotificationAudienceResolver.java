@@ -12,19 +12,19 @@ public class NotificationAudienceResolver {
             case "SUBMITTED" ->
                     List.of(
                             NotificationRole.PATIENT,
-                            NotificationRole.ORDERING_CLINICIAN,
-                            NotificationRole.FULFILMENT_QUEUE);
+                            NotificationRole.CLINICIAN,
+                            NotificationRole.FULFILMENT_STAFF);
             case "CLAIMED", "COMPLETED" ->
                     List.of(
                             NotificationRole.PATIENT,
-                            NotificationRole.ORDERING_CLINICIAN,
-                            NotificationRole.ASSIGNED_STAFF);
+                            NotificationRole.CLINICIAN,
+                            NotificationRole.FULFILMENT_STAFF);
             case "CANCELLED" ->
                     List.of(
                             NotificationRole.PATIENT,
-                            NotificationRole.ORDERING_CLINICIAN,
-                            NotificationRole.ADMINISTRATORS);
-            default -> List.of(NotificationRole.ADMINISTRATORS);
+                            NotificationRole.CLINICIAN,
+                            NotificationRole.FULFILMENT_STAFF);
+            default -> List.of(NotificationRole.CLINICIAN);
         };
     }
 }

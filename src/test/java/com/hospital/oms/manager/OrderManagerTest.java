@@ -42,19 +42,19 @@ class OrderManagerTest {
         OrderFactory factory = new OrderFactory();
         OrderProcessingHandler pipeline =
                 new ValidatingOrderHandlerDecorator(new BaseOrderProcessingHandler(orderStorageEngine));
-        TriagingEngine engine =
-                new TriagingEngine(
-                        new InMemoryDepartmentTriageSelector(
-                                new PriorityFirstTriageStrategy(),
-                                new LoadBalancingTriageStrategy(),
-                                new DeadlineFirstTriageStrategy()),
-                        orderStorageEngine);
+        InMemoryDepartmentTriageSelector selector =
+                new InMemoryDepartmentTriageSelector(
+                        new PriorityFirstTriageStrategy(),
+                        new LoadBalancingTriageStrategy(),
+                        new DeadlineFirstTriageStrategy());
+        TriagingEngine engine = new TriagingEngine(selector, orderStorageEngine);
         orderManager =
                 new OrderManager(
                         factory,
                         pipeline,
                         orderStorageEngine,
                         engine,
+                        selector,
                         notifications,
                         new InMemoryCommandLog(),
                         new CommandExecutionHistory());

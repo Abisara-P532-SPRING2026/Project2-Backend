@@ -28,13 +28,22 @@ public class DeadlineFirstTriageStrategy implements TriageStrategy {
     }
 
     private Duration targetTurnaround(OrderType type, Priority priority) {
-        if (type == OrderType.LAB && priority == Priority.STAT) {
-            return Duration.ofMinutes(30);
-        }
-        return switch (priority) {
-            case STAT -> Duration.ofMinutes(45);
-            case URGENT -> Duration.ofHours(2);
-            case ROUTINE -> Duration.ofHours(8);
+        return switch (type) {
+            case LAB -> switch (priority) {
+                case STAT -> Duration.ofSeconds(30);
+                case URGENT -> Duration.ofSeconds(60);
+                case ROUTINE -> Duration.ofSeconds(90);
+            };
+            case MEDICATION -> switch (priority) {
+                case STAT -> Duration.ofSeconds(40);
+                case URGENT -> Duration.ofSeconds(70);
+                case ROUTINE -> Duration.ofSeconds(100);
+            };
+            case IMAGING -> switch (priority) {
+                case STAT -> Duration.ofSeconds(50);
+                case URGENT -> Duration.ofSeconds(80);
+                case ROUTINE -> Duration.ofSeconds(110);
+            };
         };
     }
 }

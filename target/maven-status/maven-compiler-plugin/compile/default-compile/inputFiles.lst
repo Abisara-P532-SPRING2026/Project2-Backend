@@ -28,6 +28,7 @@
 /Users/abiramisaravanan/Documents/OOSD/Project2/backend/src/main/java/com/hospital/oms/engine/TriagingEngine.java
 /Users/abiramisaravanan/Documents/OOSD/Project2/backend/src/main/java/com/hospital/oms/web/dto/DepartmentTriageConfigResponse.java
 /Users/abiramisaravanan/Documents/OOSD/Project2/backend/src/main/java/com/hospital/oms/HospitalOrderManagementApplication.java
+/Users/abiramisaravanan/Documents/OOSD/Project2/backend/src/main/java/com/hospital/oms/web/RootController.java
 /Users/abiramisaravanan/Documents/OOSD/Project2/backend/src/main/java/com/hospital/oms/notification/ConsoleNotificationChannel.java
 /Users/abiramisaravanan/Documents/OOSD/Project2/backend/src/main/java/com/hospital/oms/command/CancelOrderCommand.java
 /Users/abiramisaravanan/Documents/OOSD/Project2/backend/src/main/java/com/hospital/oms/notification/InAppAlertNotificationChannel.java
